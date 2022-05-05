@@ -136,6 +136,7 @@ autoload -U csrcheck
 autoload -U crtcheck
 autoload -U vpn
 autoload -U rename-files
+autoload -U startdocker
 
 # turn on interactive comments
 setopt interactivecomments
