@@ -1,10 +1,11 @@
 #/bin/bash
-
 customer=$1
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[1;33m'
 nocolor='\033[0m'
+
+serverPath="${HOME}/git/SS-git/DEV/server/"
 
 # if customer empty, stop
 if [ -z ${customer} ] ; then
@@ -43,8 +44,8 @@ if [ ${exitCode} = 0 ] ; then
     echo "${green}Server started for ${customer}${nocolor}"
 
 elif [ ${exitCode} = 125 ] ; then
-    echo "${yellow}\nCreating docker image from current server repo / branch\n${nocolor}"
-    cd ~/git/SS-git/DEV/server; ./gradlew clean ${customer}Package ${customer}:application:docker
+    echo "${yellow}\nCreating docker image from current branch: ${red} $(cd ${serverPath}; git rev-parse --abbrev-ref HEAD) \n${nocolor}"
+    cd ${serverPath}; ./gradlew clean ${customer}Package ${customer}:application:docker
 
     echo "${green}\nStarting server\n${nocolor}"
     docker run -d --network local_development --name server-${customer} -e "M1_DB_HOST=postgres-development" -e "M1_DB_NAME=m1-${customer}-docker" -e "M1_DB_PORT=5432" -e "M1_CREATE_DB=true" -e "M1_CREATE_USERS=true" -e "M1_URL_HOST=https://localhost:8443" -e "TZ=Europe/Zurich" -p 8443:8443 ${customer}-application:latest
