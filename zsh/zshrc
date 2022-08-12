@@ -137,6 +137,7 @@ autoload -U crtcheck
 autoload -U vpn
 autoload -U rename-files
 autoload -U startdocker
+autoload -U startemp
 
 # turn on interactive comments
 setopt interactivecomments
@@ -235,7 +236,7 @@ export GIT_EDITOR="vim +startinsert"
 export PAGER="less"
 export PATH="${HOME}/local/bin:${HOME}/local/bin2:${HOME}/.dotfiles/bin:${PATH}"
 export GPG_TTY=$(tty)
-
+export PYTHON_BIN="${HOME}/miniconda3/bin/python"
 export PATH="${HOME}/.perl5/bin${PATH:+:${PATH}}"
 export PERL5LIB="PERL5LIB=~/local/bin/server-scripts/lib:${HOME}/.perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"
 export PERL_LOCAL_LIB_ROOT="${HOME}/.perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"
@@ -489,3 +490,7 @@ fi
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+
+# Load Angular CLI autocompletion.
+source <(ng completion script)
