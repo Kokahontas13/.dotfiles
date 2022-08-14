@@ -8,25 +8,24 @@ customers=("ext15" "ext13")
 
 if [ -z ${customer} ] ; then
     echo "Which customer? Currently supported are:"
+    select opt in "${customers[@]}"
+    do
+        case $opt in
+            ${customers[0]})
+                customer=${opt};
+                break
+                ;;
+            ${customers[1]})
+                customer=${opt};
+                break
+                ;;
+            *)
+                echo "Wrong selection. Please choose a number between 1 and ${#customers[@]}";
+        esac
+    done
 fi
 
-
-select opt in "${customers[@]}"
-do
-    case $opt in
-        ${customers[0]})
-            customer=${opt};
-            break
-            ;;
-        ${customers[1]})
-            customer=${opt};
-            break
-            ;;
-        *)
-            echo "Wrong selection. Please choose a number between 1 and ${#customers[@]}";
-    esac
-done
-
+echo "Customer ${customer} selected"
 
 echo -e '\nStarting DB ...\n'
 docker container start $(docker ps -af name=postgres -q) > /dev/null 2>&1
