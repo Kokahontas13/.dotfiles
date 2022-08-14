@@ -1,13 +1,10 @@
 #!/bin/bash
-
 customer=$1
-
 rootPath="${HOME}/git/SS-git/DEV/"
 serverPath="server"
 empServerPath="emp-server"
 empWebPath="emp-web"
 customers=("ext15" "ext13")
-branch=$(git branch –show-current)
 
 if [ -z ${customer} ] ; then
     echo "Which customer? Currently supported are:"
