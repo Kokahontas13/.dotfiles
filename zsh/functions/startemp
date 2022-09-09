@@ -1,9 +1,9 @@
 #!/bin/bash
-customer=$1
-rootPath="${HOME}/git/SS-git/DEV/"
-serverPath="server"
-empServerPath="emp-server"
-empWebPath="emp-web"
+export customer=$1
+export rootPath="${HOME}/git/SS-git/DEV/"
+export serverPath="server"
+export empServerPath="emp-server"
+export empWebPath="emp-web"
 customers=("ext15" "ext13")
 
 if [ -z ${customer} ] ; then
@@ -25,19 +25,8 @@ if [ -z ${customer} ] ; then
     done
 fi
 
-echo "Customer ${customer} selected"
-
-echo -e '\nStarting DB ...\n'
-docker container start $(docker ps -af name=postgres -q) > /dev/null 2>&1
-
-echo -e "Starting MOne server ...\n"
-docker container start $(docker ps -af name=ext15 -q) > /dev/null 2>&1
-[ $? -eq 1 ] && echo "Something went wrong. Do you have a docker image for this customer ready?"
-[ $? -eq 0 ] && echo "Server started"
-
-echo -e "Starting EMP server ... \n"
-cd ${rootPath}${empServerPath}; ./gradlew clean coreBootRun > /dev/null 2>&1
-[ $? -eq 0 ] && echo "EMP server started"
-
-echo -e "Starting EMP web from branch "
-cd ${rootPath}${empWebPath}; echo "$(git branch --show-current) ..."; npm run start:all 2>&1 | grep listening
+tmux new-session -s emp-all 'docker container start -a $(docker ps -af name=postgres -q)'\; \
+    split-window -v -p 95 'docker container start -a $(docker ps -af name=${customer} -q)' \; \
+    split-window -v -p 60 'cd ${rootPath}${empServerPath}; ./gradlew clean coreBootRun ; zsh' \; \
+    split-window -v -p 60 'cd ${rootPath}web; npm run start:${customer}' \; \
+    split-window -h 'cd ${rootPath}${empWebPath}; npm run start:all'

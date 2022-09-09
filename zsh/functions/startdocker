@@ -1,5 +1,7 @@
 #/bin/bash
+
 customer=$1
+version=$2
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[1;33m'
@@ -11,6 +13,11 @@ serverPath="${HOME}/git/SS-git/DEV/server/"
 if [ -z ${customer} ] ; then
     echo "\nPlease add a customer as parameter"
     return
+fi
+
+if [ -z ${version} ] ; then
+    echo "\n Using latest version"
+    ${version}=latest
 fi
 
 # Stop all running docker container
@@ -29,14 +36,13 @@ fi
 # Update and creade DB
 echo "${green}\nUpdate and create DB\n${nocolor}"
 docker network create local_development
-docker pull postgres:10
-docker run -d --network local_development --name postgres-development -p 5432:5432 -e POSTGRES_PASSWORD=M1 postgres:10
-docker pull dpage/pgadmin4
-docker run -d --network local_development --name pgadmin-development  -p 11080:80 -e "PGADMIN_DEFAULT_EMAIL=m1@dswiss.com" -e "PGADMIN_DEFAULT_PASSWORD=M1" dpage/pgadmin4
-
+docker pull artifactory.int.dswiss.com/docker/postgres:10
+docker run -d --network local_development --name web_database-dev_1 -p 5432:5432 -e POSTGRES_PASSWORD=M1 artifactory.int.dswiss.com/docker/postgres:10
+docker pull artifactory.int.dswiss.com/docker-local/local/m1-papi:main
+docker run -d --network local_development --name web_m1-papi_1 -p 8445:3000 -e POSTGRES_PASSWORD=M1 artifactory.int.dswiss.com/docker-local/local/m1-papi:main
 # start server
 echo "${green}\nStart server\n${nocolor}"
-response=$(docker run -d --network local_development --name server-${customer} -e "M1_DB_HOST=postgres-development" -e "M1_DB_NAME=m1-${customer}-docker" -e "M1_DB_PORT=5432" -e "M1_CREATE_DB=true" -e "M1_CREATE_USERS=true" -e "M1_URL_HOST=https://localhost:8443" -e "TZ=Europe/Zurich" -p 8443:8443 ${customer}-application:latest)
+command=$(docker run -d --network local_development --name server-${customer} -e "M1_DB_HOST=postgres-development" -e "M1_DB_NAME=m1-${customer}-docker" -e "M1_DB_PORT=5432" -e "M1_CREATE_DB=true" -e "M1_CREATE_USERS=true" -e "M1_URL_HOST=https://localhost:8443" -e "TZ=Europe/Zurich" -p 8443:8443 ${customer}-application:${version})
 
 exitCode=$?
 
@@ -44,13 +50,25 @@ if [ ${exitCode} = 0 ] ; then
     echo "${green}Server started for ${customer}${nocolor}"
 
 elif [ ${exitCode} = 125 ] ; then
-    echo "${yellow}\nCreating docker image from current branch: ${red} $(cd ${serverPath}; git rev-parse --abbrev-ref HEAD) \n${nocolor}"
-    cd ${serverPath}; ./gradlew clean ${customer}Package ${customer}:application:docker
 
-    echo "${green}\nStarting server\n${nocolor}"
-    docker run -d --network local_development --name server-${customer} -e "M1_DB_HOST=postgres-development" -e "M1_DB_NAME=m1-${customer}-docker" -e "M1_DB_PORT=5432" -e "M1_CREATE_DB=true" -e "M1_CREATE_USERS=true" -e "M1_URL_HOST=https://localhost:8443" -e "TZ=Europe/Zurich" -p 8443:8443 ${customer}-application:latest
+    echo -e "${yellow}Do you want to download a remote docker image or create one from your server repo?${nocolor}"
 
-    echo "${green}\nServer started for ${customer}${nocolor} \n"
+    select rl in "Remote" "Local"; do
+        case $rl in
+            Remote )    image=artifactory.int.dswiss.com/docker-local/local/server-${customer}:${version};
+                        docker pull ${image};
+                        docker run -d --network local_development --name web_m1-dev_1 -p 8443:8443 -e POSTGRES_PASSWORD=M1 ${image};
+                        echo "Docker image started";
+                        break;;
+            Local )     echo "${yellow}\nCreating docker image from current branch: ${red} $(cd ${serverPath}; git rev-parse --abbrev-ref HEAD) \n${nocolor}";
+                        cd ${serverPath}; ./gradlew clean ${customer}Package ${customer}:application:docker;
+                        echo "${green}\nStarting server\n${nocolor}";
+                        ${command};
+                        break;;
+        esac
+        done
+
+    echo -e "${green}\nServer started for ${customer}${nocolor} \n"
 
 else
     echo -e "${red}Something went totaly wrong${nocolor}"
