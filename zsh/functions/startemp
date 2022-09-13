@@ -1,4 +1,5 @@
 #!/bin/bash
+
 export customer=$1
 export rootPath="${HOME}/git/SS-git/DEV/"
 export serverPath="server"
@@ -25,8 +26,8 @@ if [ -z ${customer} ] ; then
     done
 fi
 
-tmux new-session -s emp-all 'docker container start -a $(docker ps -af name=postgres -q)'\; \
-    split-window -v -p 95 'docker container start -a $(docker ps -af name=${customer} -q)' \; \
+tmux new-session -s emp-all 'docker container start -a $(docker ps -af name=postgres -q) ; zsh' \; \
+    split-window -v -p 95 'docker container start -a $(docker ps -af name=${customer} -q) ; zsh' \; \
     split-window -v -p 60 'cd ${rootPath}${empServerPath}; ./gradlew clean coreBootRun ; zsh' \; \
-    split-window -v -p 60 'cd ${rootPath}web; npm run start:${customer}' \; \
+    split-window -v -p 60 'cd ${rootPath}web; npm run start:${customer} ; zsh' \; \
     split-window -h 'cd ${rootPath}${empWebPath}; npm run start:all'
