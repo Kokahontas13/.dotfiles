@@ -54,6 +54,8 @@ backup .config/redshift
 backup .xscreensaver
 backup .xsessionrc
 backup .Xresources
+backup .themes/Ambiant-MATE-Dark
+backup .icons/Ambiant-MATE
 
 ################################################################################
 ##### INSTALL CONFIGS
@@ -115,6 +117,10 @@ dpkg -l xscreensaver 2> /dev/null | grep -qE '^ii' && {
     putconfig xscreensaver/xsessionrc "${home}/.xsessionrc"
     putconfig xscreensaver/Xresources "${home}/.Xresources"
 }
+
+# themes/icons
+putconfig themes/Ambiant-MATE-Dark "${home}/.themes/Ambiant-MATE-Dark"
+putconfig icons/Ambiant-MATE "${home}/.icons/Ambiant-MATE"
 
 ################################################################################
 ##### POST INSTALL STUFF
