@@ -1,11 +1,13 @@
 #!/bin/bash
-
 export customer=$1
 export rootPath="${HOME}/git/SS-git/DEV/"
 export serverPath="server"
 export empServerPath="emp-server"
 export empWebPath="emp-web"
 customers=("ext15" "ext13")
+
+wmctrl -r :ACTIVE: -N "Backend EMP ${customer}"
+wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz
 
 if [ -z ${customer} ] ; then
     echo "Which customer? Currently supported are:"
@@ -26,8 +28,20 @@ if [ -z ${customer} ] ; then
     done
 fi
 
-tmux new-session -s emp-all 'docker container start -a $(docker ps -af name=postgres -q) ; zsh' \; \
-    split-window -v -p 95 'docker container start -a $(docker ps -af name=${customer} -q) ; zsh' \; \
-    split-window -v -p 60 'cd ${rootPath}${empServerPath}; ./gradlew clean coreBootRun ; zsh' \; \
-    split-window -v -p 60 'cd ${rootPath}web; npm run start:${customer} ; zsh' \; \
-    split-window -h 'cd ${rootPath}${empWebPath}; npm run start:all'
+tmux new-session \
+    -s emp \
+    -n emp \; \
+    \
+    split-window -h \; \
+    split-window -t "emp:1.0" -p 90 \; \
+    split-window -t "emp:1.2" -p 88 \; \
+    split-window -t "emp:1.3" -p 30 \; \
+    split-window -t "emp:1.1" -p 30 \; \
+    \
+    send-keys -t "emp:1.0" "docker container start -a $(docker ps -af name=postgres-development-${customer} -q)" Enter \; \
+    send-keys -t "emp:1.3" "cd ${rootPath}${serverPath}; ./gradlew clean ${customer}Package ${customer}SetupDatabase ${customer}:application:cargoRunLocal" Enter \; \
+    send-keys -t "emp:1.1" "cd ${rootPath}${empServerPath}; ./gradlew clean coreBootRun" Enter \; \
+    send-keys -t "emp:1.4" "cd ${rootPath}${serverPath}; while [ ! -f ${customer}/application/build/logs/server.log ] ; do sleep 2; done; tail -f ${customer}/application/build/logs/server.log" Enter \; \
+    send-keys -t "emp:1.2" "cd ${rootPath}web; npm run start:${customer}" Enter \; \
+    send-keys -t "emp:1.5" "cd ${rootPath}${empWebPath}; npm run start:all:${customer}" Enter \;
+
