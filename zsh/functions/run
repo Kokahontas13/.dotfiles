@@ -1,0 +1,104 @@
+## DEBUG
+# set -x
+
+## Variables / arrays
+customersArr=(sesa ubs dbank raifch dsv vzdbch rlb bkb)
+envArr=(acpt devl migr)
+CUSTOMER=$1
+ENV=$2
+
+## Ask for user input customer
+if [[ -z "${CUSTOMER}" ]]
+then
+
+    echo "Which customer do you want to build?"
+    echo "(${customersArr[*]})"
+    read CUSTOMER
+
+    ## If user input for customer is empty
+    while [[ -z "${CUSTOMER}" ]]
+    do
+        echo "Customer can not be empty"
+        echo "Which customer do you want to build?"
+        echo "(${customersArr[*]})"
+        read CUSTOMER
+    done
+
+    ## If user input is "not defined" in ${customersArr}
+    while [[ ! " ${customersArr} " =~ " ${CUSTOMER} " ]]
+        do
+        echo "Customer not defined in script. Please choose one of the following customers"
+        echo "(${customersArr[*]})"
+        read CUSTOMER
+    done
+fi
+
+## If customer is NOT ubs, ask for environment. Skip if customer is ubs
+if [ "$CUSTOMER" != "ubs" ] && [[ -z "${ENV}" ]]
+then
+    echo "Which environment do you want to connect to? "
+    echo "(${envArr})"
+    read ENV
+
+    ## If environment input is empty
+    while [[ -z "${ENV}" ]]
+    do
+        echo "Environment can not be empty"
+        echo "Which environment do you want to connect to?"
+        echo "(${envArr})"
+        read ENV
+    done
+fi
+
+## If environment input is not defined in ${envArr} and customer is NOT ubs
+while [[ ! " ${envArr} " =~ " ${ENV} " ]] && [[ "${CUSTOMER}" != "ubs" ]]
+do
+    echo "Environment not listed in script. Please choose one of the following environments"
+    echo "(${envArr})"
+    read ENV
+done
+
+## Set EXT variable dependent on customer user input
+case ${CUSTOMER} in
+    ${customersArr[1]})
+        CUSTOMER="dsw" # Rewrite sesa to dsw (for convinience)
+        EXT="sesa"
+        ;;
+    ${customersArr[2]})
+        EXT="ext2"
+        ;;
+    ${customersArr[3]})
+        EXT="ext5"
+        ;;
+    ${customersArr[4]})
+        EXT="ext8"
+        ;;
+    ${customersArr[5]})
+        EXT="ext10"
+        ;;
+    ${customersArr[6]})
+        EXT="ext11"
+        ;;
+    ${customersArr[7]})
+        EXT="ext12"
+        ;;
+    ${customersArr[8]})
+        EXT="ext13"
+        ;;
+    *)
+        echo "Customer not defined. Please check the script and add customer to customersArr AND to the case statement or use one of the following customers:"
+        echo "(${customersArr})"
+        kill -INT $$
+        ;;
+esac
+
+function () {
+if [ ${CUSTOMER} = "ubs" ] ## UBS doesnt need an ${ENV} but an ${API}
+then
+    echo "HOST="${CUSTOMER}" API="app/H36/api" npm run serve:${EXT} -- --proxy-config remote.proxy.conf.js"
+    HOST="${CUSTOMER}" API="app/H36/api" npm run serve:${EXT} -- --proxy-config remote.proxy.conf.js
+else
+    echo "HOST="${CUSTOMER}" ENV="test${ENV}" npm run serve:${EXT} -- --proxy-config remote.proxy.conf.js"
+    HOST="${CUSTOMER}" ENV="test${ENV}" npm run serve:${EXT} -- --proxy-config remote.proxy.conf.js
+fi
+}

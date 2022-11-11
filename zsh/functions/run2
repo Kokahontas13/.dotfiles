@@ -1,0 +1,166 @@
+## DEBUG
+# set -x
+
+## Variables / arrays
+
+fileName="customers.zsh"
+
+## Test if source file exists. If not, create it
+
+if [ ! -f "${fileName}" ]; then
+    echo "Customer file does not exist yet. Creating it..."
+    echo "case \${CUSTOMER} in"                  > "${fileName}"
+    echo "sesa) CUSTOMER='dsw' EXT='sesa' ;;"   >> "${fileName}"
+    echo "ubs) EXT='ext2' ;;"                   >> "${fileName}"
+    echo "dbank) EXT='ext5' ;;"                 >> "${fileName}"
+    echo "raifch) EXT='ext8' ;;"                >> "${fileName}"
+    echo "dsv) EXT='ext10' ;;"                  >> "${fileName}"
+    echo "vzdbch) EXT='ext11' ;;"               >> "${fileName}"
+    echo "rlb) EXT='ext12' ;;"                  >> "${fileName}"
+    echo "bkb) EXT='ext13';;"                   >> "${fileName}"
+    echo "*) echo 'Unable to comply' ;;"        >> "${fileName}"
+    echo "esac"                                 >> "${fileName}"
+fi
+
+customersArr=($(cat "${fileName}" | tail -n +2 | head -n -2 | cut -f1 -d\))) # Cut source file 
+envArr=('acpt' 'devl' 'migr')
+funcName=$funcstack[1]
+CUSTOMER="$1"
+ENV="$2"
+
+usage()
+{
+echo "----------------------------------
+Usage:
+
+${funcName} <customer> <environment> || ${funcName} [options]
+
+Description:
+    Build your own dev environment and connect to a remote server
+
+Currently supported customers: 
+    [${customersArr}]
+
+Supported environments: 
+    [${envArr}]
+
+Options:
+    -a/--add
+        Add a new customer to the script
+    -d/--del
+        Delete a customer from the script
+    -h/--help
+        This help
+----------------------------------"
+}
+
+local addCustomer() {
+    echo "What is the internal abbreviation of the new customer"
+    read newCustomer
+
+    echo "What is the internal ext number for [${newCustomer}]"
+    read newCustomerExt
+
+    newLine=$(($(wc -l <"customers.zsh") -1))
+    sed -i "${newLine}i\\${newCustomer}) EXT=${newCustomerExt} ;;" ${fileName}
+
+    echo "${newCustomer} was added. Run the script without -a option to continue"
+    kill -INT $$
+}
+
+local deleteCustomer() {
+    echo "Which customer do you want to delete?"
+    echo "[${customersArr[*]}]"
+    read deleteCustomer
+
+    deleteLine=$(grep -n ${deleteCustomer} ${fileName} | cut -d: -f 1)
+    sed -i "${deleteLine}d" ${fileName}
+    echo "${deleteCustomer} was deleted as customer and can no longer be build by this script"
+    kill -INT $$
+}
+
+if [[ $1  == *"-"* ]]; then
+    PARAM="$(getopt -o had --long help,add,delete -- "$@")"
+
+    eval set -- "${PARAM}"
+    while true ; do
+        case "${1}" in
+                -h|--help) usage ; kill -INT $$ ;;
+                -a|--add) addCustomer; shift ;;
+                -d|--delete) deleteCustomer; shift ;;
+                --) shift ; break ;;
+                *) echo -e "Some weird error..\nI'm sorry.\nSomething with parameters is going wrong." ; exit 1 ;;
+        esac
+    done
+
+else
+
+    ## Ask for user input customer
+    if [[ -z "${CUSTOMER}" ]]
+    then
+
+        echo "Which customer do you want to build?"
+        echo "[${customersArr[*]}]" 
+        read CUSTOMER
+
+        ## If user input for customer is empty
+        while [[ -z "${CUSTOMER}" ]]
+        do
+            echo "Customer can not be empty"
+            echo "Which customer do you want to build?"
+            echo "[${customersArr[*]}]"
+            read CUSTOMER
+        done
+
+        ## If user input is "not defined" in ${customersArr}
+        while [[ ! " ${customersArr} " =~ " ${CUSTOMER} " ]]
+            do
+            echo "Customer not defined in script. Please choose one of the following customers"
+            echo "[${customersArr[*]}]"
+            read CUSTOMER
+        done
+    fi
+
+    ## If customer is NOT ubs, ask for environment. Skip if customer is ubs
+    if [ "$CUSTOMER" != "ubs" ] && [[ -z "${ENV}" ]]
+    then
+        echo "Which environment do you want to connect to? "
+        echo "[${envArr}]"
+        read ENV
+
+        ## If environment input is empty
+        while [[ -z "${ENV}" ]]
+        do
+            echo "Environment can not be empty"
+            echo "Which environment do you want to connect to?"
+            echo "[${envArr}]"
+            read ENV
+        done
+    fi
+
+    ## If environment input is not defined in ${envArr} and customer is NOT ubs
+    while [[ ! " ${envArr} " =~ " ${ENV} " ]] && [[ "${CUSTOMER}" != "ubs" ]]
+    do
+        echo "Environment not listed in script. Please choose one of the following options"
+        echo "[${envArr}]"
+        read ENV
+    done
+    
+    ## Set EXT variable dependent on customer user input
+    source "${fileName}"
+
+    function build () {
+    if [ ${CUSTOMER} = "ubs" ] ## UBS doesnt need an ${ENV} but an ${API}
+    then
+        echo --------------------------------------------------------------------------------------------------
+        echo "HOST="${CUSTOMER}" API="app/H36/api" npm run serve:${EXT} -- --proxy-config remote.proxy.conf.js"
+        echo --------------------------------------------------------------------------------------------------
+        HOST="${CUSTOMER}" API="app/H36/api" npm run serve:${EXT} -- --proxy-config remote.proxy.conf.js
+    else
+        echo --------------------------------------------------------------------------------------------------
+        echo "HOST="${CUSTOMER}" ENV="test${ENV}" npm run serve:${EXT} -- --proxy-config remote.proxy.conf.js"
+        echo --------------------------------------------------------------------------------------------------
+        HOST="${CUSTOMER}" ENV="test${ENV}" npm run serve:${EXT} -- --proxy-config remote.proxy.conf.js
+    fi
+    }
+fi

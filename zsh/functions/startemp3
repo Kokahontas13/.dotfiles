@@ -1,0 +1,44 @@
+#!/bin/bash
+set -x
+customer=$1
+rootPath="${HOME}/git/SS-git/DEV/"
+serverPath="server"
+empServerPath="emp-server"
+empWebPath="emp-web"
+customers=("ext15" "ext13")
+
+if [ -z ${customer} ] ; then
+    echo "Which customer? Currently supported are:"
+    select opt in "${customers[@]}"
+    do
+        case $opt in
+            ${customers[0]})
+                customer=${opt};
+                break
+                ;;
+            ${customers[1]})
+                customer=${opt};
+                break
+                ;;
+            *)
+                echo "Wrong selection. Please choose a number between 1 and ${#customers[@]}";
+        esac
+    done
+fi
+
+echo "Customer ${customer} selected"
+
+echo -e '\nStarting DB ...\n'
+docker container start $(docker ps -af name=postgres -q) > /dev/null 2>&1
+
+echo -e "Starting MOne server ...\n"
+docker container start $(docker ps -af name=ext15 -q) > /dev/null 2>&1
+[ $? -eq 1 ] && echo "Something went wrong. Do you have a docker image for this customer ready?"
+[ $? -eq 0 ] && echo "Server started"
+
+echo -e "Starting EMP server ... \n"
+cd ${rootPath}${empServerPath}; ./gradlew clean coreBootRun > /dev/null 2>&1 &
+[ $? -eq 0 ] && echo "EMP server started"
+
+echo -e "Starting EMP web from branch "
+cd ${rootPath}${empWebPath}; echo "$(git branch --show-current) ..."; npm run start:all 2>&1 | grep listening
