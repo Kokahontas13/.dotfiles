@@ -103,6 +103,9 @@ set pgp_long_ids = "yes"
 # reply signed
 set crypt_replysign = "yes"
 
+# do not s/mime
+set crypt_autosmime = "no"
+
 # don't show unusable
 set pgp_show_unusable = "no"
 
@@ -113,11 +116,18 @@ set pgp_use_gpg_agent = "yes"
 set pgp_autosign = "yes"
 set pgp_timeout = "1800"
 
+# pgp self encrypt (default but still better to mention it explicitely)
+set pgp_self_encrypt = "yes"
+
 # for copy paste to every account
 # set pgp_sign_as = "0x*****"
+# set pgp_default_key = "0x*****"
 
 set dsn_notify = "failure,delay"
 set dsn_return = "hdrs"
+
+# show message id
+unignore Message-Id
 
 ################################################################################
 # SIDEBAR SETTINGS______________________________________________________________

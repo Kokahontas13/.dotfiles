@@ -220,11 +220,13 @@ inoremap <C-k> <Esc>ld$a
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""" commands
 
-"Pathogen syntax highlighting things
+" configure puppet linter
+let g:ale_puppet_puppetlint_options = "--no-80chars-check --no-140chars-check --no-puppet_url_without_modules-check --no-documentation-check --no-autoloader_layout-check"
+
+"Pathogen stuff
 call pathogen#infect()
 filetype off
 syntax on
-let g:syntastic_puppet_puppetlint_args = "--no-80chars-check --no-140chars-check"
 filetype plugin indent on
 call pathogen#helptags()
 
