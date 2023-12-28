@@ -138,6 +138,7 @@ autoload -U vpn
 autoload -U rename-files
 autoload -U startdocker
 autoload -U startemp
+autoload -U multiple-cherry-picks
 
 # turn on interactive comments
 setopt interactivecomments
@@ -232,7 +233,7 @@ export PASSWORD_STORE_X_SELECTION='XA_PRIMARY'
 export PASSWORD_STORE_CLIP_TIME='20'
 export _JAVA_OPTIONS='-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true -Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel -Dswing.crossplatformlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel'
 export EDITOR="vim"
-export GIT_EDITOR="vim +startinsert"
+export GIT_EDITOR="vim -c 'startinsert|norm! ggA '"
 export PAGER="less"
 export PATH="${HOME}/local/bin:${HOME}/local/bin2:${HOME}/.dotfiles/bin:${PATH}"
 export GPG_TTY=$(tty)
@@ -242,6 +243,9 @@ export PERL5LIB="PERL5LIB=~/local/bin/server-scripts/lib:${HOME}/.perl5/lib/perl
 export PERL_LOCAL_LIB_ROOT="${HOME}/.perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"
 export PERL_MB_OPT="--install_base \"${HOME}/.perl5\""
 export PERL_MM_OPT="INSTALL_BASE=${HOME}/.perl5"
+
+# homebrew binaries
+test -d /opt/homebrew/bin && PATH="${PATH}:/opt/homebrew/bin"
 
 # source local config (testing or so)
 if [ -f ~/.dotfiles/zsh/zshrc.local ]
@@ -389,6 +393,8 @@ function precmd() {
     # prompt for right side of screen
     RPROMPT='[%*]'
 
+    local esafeline=" %{$fg[yellow] ● eSafe: $(esafe check | head -n 1 | sed -n 's|.*/\([^/]*\)\.config\.json|\1|p')%}"
+
     # TMUX <3 stuff
     test ! -z "${TMUX}" && local parsetmux="$(tmux display-message -p 'session: #S, pane: #P' 2> /dev/null)"
 
@@ -438,9 +444,9 @@ function precmd() {
 
         # some symbols/characters for git line:  # ⁇ ⁂ ● ⚛ ⁙ ᛭ ⚫ ⚪ ✓ ×    ¤
         # reset colors
-        local gitline="${gitline}%{${reset_color}%}"
+        local gitline="${gitline}${esafeline}%{${reset_color}%}"
     else
-        local gitline=""
+        local gitline="${esafeline}"
     fi
 
     # needed for exit status smiley/char
@@ -501,3 +507,19 @@ export NVM_DIR="$HOME/.nvm"
 
 # Load Angular CLI autocompletion.
 # source <(ng completion script)
+
+
+source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+eval "$(/opt/homebrew/bin/brew shellenv)"
+export PATH="/opt/homebrew/opt/openjdk@11/bin:$PATH"
+export ARTIFACTORY_USER="nils.tanner@dswiss.com"
+export ARTIFACTORY_API_KEY=$(security find-generic-password -w -a nilstanner -s 'ARTIFACTORY_API_KEY')
+#source /opt/homebrew/opt/powerlevel10k/powerlevel10k.zsh-theme
+#
+export NVM_DIR="$HOME/.nvm"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+[ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+

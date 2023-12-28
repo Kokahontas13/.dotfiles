@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Check if at least a commit ID is provided
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 <commit-id> [target-branch]"
+    return 1  # Using return instead of exit when sourced as a function
+fi
+
+# The commit ID
+COMMIT_ID=$1
+
+# The target branch, default to "master" if not provided
+TARGET_BRANCH=${2:-master}
+
+# Save the current branch name
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Check if COMMIT_ID is in the history of the CURRENT_BRANCH
+if ! git merge-base --is-ancestor $COMMIT_ID $CURRENT_BRANCH; then
+    echo "Commit $COMMIT_ID is not known in branch $CURRENT_BRANCH. Aborting."
+    return 1  # Using return instead of exit
+fi
+
+# Stash any unstaged changes
+git stash --include-untracked
+
+# Switch to the target branch
+git checkout $TARGET_BRANCH
+
+# Pull the latest changes
+git pull
+
+# Get the branch name associated with the commit, excluding the current branch
+BRANCH_NAME=$(git branch --contains $COMMIT_ID | grep -v '^\*' | grep -v "$CURRENT_BRANCH" | tr -d '[:space:]')
+
+# Check if the branch name was found
+if [ -z "$BRANCH_NAME" ]; then
+    echo "No branch found for commit $COMMIT_ID"
+    return 1  # Using return instead of exit
+fi
+
+# Modify the branch name
+NEW_BRANCH_NAME=$(echo $BRANCH_NAME | sed 's/[^\/]*\//cherrypick\//')
+
+# Create a new branch with the modified name
+git branch $NEW_BRANCH_NAME
+
+# Checkout the new branch
+git checkout $NEW_BRANCH_NAME
+
+# Perform git cherry-pick
+git cherry-pick $COMMIT_ID
+
+# Output the new branch name
+echo "New branch created: $NEW_BRANCH_NAME"
